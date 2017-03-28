@@ -1,8 +1,16 @@
+/*
+QuillToolbar is deprecated. Consider switching to the official Quill
+toolbar format, or providing your own toolbar instead. 
+See https://quilljs.com/docs/modules/toolbar
+*/
+
 'use strict';
 
-var React = require('react'),
-	ReactDOMServer = require('react-dom/server'),
-	T = React.PropTypes;
+var React = require('react');
+var ReactDOMServer = require('react-dom/server');
+var find = require('lodash/find');
+var isEqual = require('lodash/isEqual');
+var T = React.PropTypes;
 
 var defaultColors = [
 	'rgb(  0,   0,   0)', 'rgb(230,   0,   0)', 'rgb(255, 153,   0)',
@@ -69,13 +77,26 @@ var QuillToolbar = React.createClass({
 	propTypes: {
 		id:        T.string,
 		className: T.string,
+		style:     T.object,
 		items:     T.array
 	},
 
-	getDefaultProps: function(){
+	getDefaultProps: function() {
 		return {
 			items: defaultItems
 		};
+	},
+
+	componentDidMount: function() {
+		console.warn(
+			'QuillToolbar is deprecated. Consider switching to the official Quill ' +
+			'toolbar format, or providing your own toolbar instead. ' +
+			'See: https://github.com/zenoamaro/react-quill#upgrading-to-react-quill-v1-0-0'
+		);
+	},
+
+	shouldComponentUpdate: function(nextProps, nextState) {
+		return !isEqual(nextProps, this.props);
 	},
 
 	renderGroup: function(item, key) {
@@ -89,24 +110,20 @@ var QuillToolbar = React.createClass({
 	renderChoiceItem: function(item, key) {
 		return React.DOM.option({
 			key: item.label || item.value || key,
-			value:item.value },
+			value: item.value },
 			item.label
 		);
 	},
 
 	renderChoices: function(item, key) {
+		var choiceItems = item.items.map(this.renderChoiceItem);
+		var selectedItem = find(item.items, function(item){ return item.selected });
 		var attrs = {
 			key: item.label || key,
 			title: item.label,
-			className: 'ql-'+item.type
+			className: 'ql-'+item.type,
+			value: selectedItem.value,
 		};
-		var self = this;
-		var choiceItems = item.items.map(function(item, key) {
-			if (item.selected) {
-				attrs.defaultValue = item.value;
-			}
-			return self.renderChoiceItem(item, key);
-		})
 		return React.DOM.select(attrs, choiceItems);
 	},
 
@@ -122,7 +139,7 @@ var QuillToolbar = React.createClass({
 	},
 
 	renderAction: function(item, key) {
-		return React.DOM.span({
+		return React.DOM.button({
 			key: item.label || item.value || key,
 			className: 'ql-'+item.type,
 			title: item.label },
@@ -130,6 +147,7 @@ var QuillToolbar = React.createClass({
 		);
 	},
 
+	/* jshint maxcomplexity: false */
 	renderItem: function(item, key) {
 		switch (item.type) {
 			case 'group':
@@ -166,11 +184,12 @@ var QuillToolbar = React.createClass({
 		var children = this.props.items.map(this.renderItem);
 		var html = children.map(ReactDOMServer.renderToStaticMarkup).join('');
 		return React.DOM.div({
+			id: this.props.id,
 			className: this.getClassName(),
-			style: this.props.style || {},
+			style: this.props.style,
 			dangerouslySetInnerHTML: { __html:html }
 		});
-	}
+	},
 
 });
 

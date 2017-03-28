@@ -20,23 +20,35 @@ var QuillMixin = {
 		// accidentally modifying editor state.
 		var unprivilegedEditor = this.makeUnprivilegedEditor(editor);
 
-		editor.on('text-change', function(delta, oldDelta, source) {
-			if (this.onEditorChange) {
-				this.onEditorChange(
+		this.handleTextChange = function(delta, oldDelta, source) {
+			if (this.onEditorChangeText) {
+				this.onEditorChangeText(
 					editor.root.innerHTML, delta, source,
 					unprivilegedEditor
 				);
+				this.onEditorChangeSelection(
+					editor.getSelection(), source,
+					unprivilegedEditor
+				);
 			}
-		}.bind(this));
+		}.bind(this);
 
-		editor.on('selection-change', function(range, oldRange, source) {
+		this.handleSelectionChange = function(range, oldRange, source) {
 			if (this.onEditorChangeSelection) {
 				this.onEditorChangeSelection(
 					range, source,
 					unprivilegedEditor
 				);
 			}
-		}.bind(this));
+		}.bind(this);
+
+		editor.on('text-change', this.handleTextChange);
+		editor.on('selection-change', this.handleSelectionChange);
+	},
+
+	unhookEditor: function(editor) {
+		editor.off('selection-change');
+		editor.off('editor-change');
 	},
 
 	setEditorReadOnly: function(editor, value) {
@@ -51,7 +63,7 @@ var QuillMixin = {
 	*/
 	setEditorContents: function(editor, value) {
 		var sel = editor.getSelection();
-		editor.pasteHTML(value || '');
+		editor.clipboard.dangerouslyPasteHTML(value || '');
 		if (sel) this.setEditorSelection(editor, sel);
 	},
 
@@ -59,8 +71,8 @@ var QuillMixin = {
 		if (range) {
 			// Validate bounds before applying.
 			var length = editor.getLength();
-			range.index = Math.max(0, Math.min(range.index, range.length-1));
-			range.length = length;
+			range.index = Math.max(0, Math.min(range.index, length-1));
+			range.length = Math.max(0, Math.min(range.length, (length-1) - range.index));
 		}
 		editor.setSelection(range);
 	},
@@ -73,11 +85,11 @@ var QuillMixin = {
 	makeUnprivilegedEditor: function(editor) {
 		var e = editor;
 		return {
-			getLength:    function(){ e.getLength.apply(e, arguments); },
-			getText:      function(){ e.getText.apply(e, arguments); },
-			getContents:  function(){ e.getContents.apply(e, arguments); },
-			getSelection: function(){ e.getSelection.apply(e, arguments); },
-			getBounds:    function(){ e.getBounds.apply(e, arguments); },
+			getLength:    function(){ return e.getLength.apply(e, arguments); },
+			getText:      function(){ return e.getText.apply(e, arguments); },
+			getContents:  function(){ return e.getContents.apply(e, arguments); },
+			getSelection: function(){ return e.getSelection.apply(e, arguments); },
+			getBounds:    function(){ return e.getBounds.apply(e, arguments); },
 		};
 	}
 

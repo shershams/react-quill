@@ -2,6 +2,9 @@
 /* global ReactQuill */
 'use strict';
 
+if (typeof React !== 'object') alert('React not found. Did you run "npm install"?');
+if (typeof ReactQuill !== 'function') alert('ReactQuill not found. Did you run "make build"?')
+
 var Editor = React.createClass({
 
 	getInitialState: function() {
@@ -16,7 +19,7 @@ var Editor = React.createClass({
 
 	formatRange: function(range) {
 		return range
-			? [range.start, range.end].join(',')
+			? [range.index, range.index + range.length].join(',')
 			: 'none';
 	},
 
